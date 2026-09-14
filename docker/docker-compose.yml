@@ -1,0 +1,23 @@
+name: oni
+
+services:
+  postgres:
+    image: postgres
+    container_name: account-db-postgres
+    environment:
+      POSTGRES_DB: account-db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: my_secret_password
+    ports:
+      - "5433:5432"
+    volumes:
+      - book_postgres_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  book_postgres_data:
