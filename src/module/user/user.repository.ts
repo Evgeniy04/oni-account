@@ -1,15 +1,8 @@
 import { InjectRepository } from '@nestjs/typeorm';
 import { UserEntity } from './entities/user.entity.js';
-import {
-  DeepPartial,
-  Repository,
-  SelectQueryBuilder,
-} from 'typeorm';
+import { DeepPartial, Repository, SelectQueryBuilder } from 'typeorm';
 
-import {
-  CheckExistUserParams,
-  FindUserParams,
-} from './user.types.js';
+import { CheckExistUserParams, FindUserParams } from './user.types.js';
 
 export class UserRepository {
   constructor(
@@ -23,20 +16,19 @@ export class UserRepository {
     return this.userRepository.save(entity);
   }
 
-  async findById(
-    userId: string,
-  ): Promise<UserEntity | null> {
+  async findById(userId: string): Promise<UserEntity | null> {
     return this.userRepository.findOneBy({ userId });
   }
 
-  async findAndCount(
-    params: FindUserParams,
-  ): Promise<{
+  async findByLogin(login: string): Promise<UserEntity | null> {
+    return this.userRepository.findOneBy({ login });
+  }
+
+  async findAndCount(params: FindUserParams): Promise<{
     items: UserEntity[];
     total: number;
   }> {
-    const [items, total] =
-      await this.qb(params).getManyAndCount();
+    const [items, total] = await this.qb(params).getManyAndCount();
 
     return {
       items,
@@ -44,13 +36,8 @@ export class UserRepository {
     };
   }
 
-  async updateUser(
-    params: DeepPartial<UserEntity>,
-  ): Promise<void> {
-    await this.userRepository.update(
-      { userId: params.userId },
-      params,
-    );
+  async updateUser(params: DeepPartial<UserEntity>): Promise<void> {
+    await this.userRepository.update({ userId: params.userId }, params);
   }
 
   async deleteUser(id: string): Promise<void> {
@@ -63,8 +50,7 @@ export class UserRepository {
     params: CheckExistUserParams,
     alias = 'user',
   ): Promise<boolean> {
-    const query =
-      this.userRepository.createQueryBuilder(alias);
+    const query = this.userRepository.createQueryBuilder(alias);
 
     query.where('user.login = :login', {
       login: params.login,
@@ -82,25 +68,18 @@ export class UserRepository {
     params: FindUserParams = {},
     alias = 'user',
   ): SelectQueryBuilder<UserEntity> {
-    const query =
-      this.userRepository.createQueryBuilder(alias);
+    const query = this.userRepository.createQueryBuilder(alias);
 
     if (params.userIds?.length) {
-      query.andWhere(
-        `${alias}.userId in (:...userIds)`,
-        {
-          userIds: params.userIds,
-        },
-      );
+      query.andWhere(`${alias}.userId in (:...userIds)`, {
+        userIds: params.userIds,
+      });
     }
 
     if (params.phones?.length) {
-      query.andWhere(
-        `${alias}.phone in (:...phones)`,
-        {
-          phones: params.phones,
-        },
-      );
+      query.andWhere(`${alias}.phone in (:...phones)`, {
+        phones: params.phones,
+      });
     }
 
     // Paginate
