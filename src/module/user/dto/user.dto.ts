@@ -13,14 +13,14 @@ export class UserDto {
   @IsString()
   userId: string;
 
-  @ApiProperty({
-    description: 'Логин пользователя',
-    required: true,
-    type: String,
-  })
-  @Expose()
-  @IsString()
-  login: string;
+  // @ApiProperty({
+  //   description: 'Логин пользователя',
+  //   required: true,
+  //   type: String,
+  // })
+  // @Expose()
+  // @IsString()
+  // login: string;
 
   @ApiProperty({
     description: 'Телефон пользователя',
@@ -66,6 +66,14 @@ export class UserDto {
   @Expose()
   @IsString()
   email: string;
+
+  @ApiProperty({
+    description: 'Баланс пользователя',
+    type: String,
+  })
+  @IsString()
+  @Expose()
+  balance: string;
 
   constructor(entity: Partial<UserEntity>) {
     return plainToInstance(UserDto, entity, {

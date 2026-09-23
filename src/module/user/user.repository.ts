@@ -2,7 +2,11 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { UserEntity } from './entities/user.entity.js';
 import { DeepPartial, Repository, SelectQueryBuilder } from 'typeorm';
 
-import { CheckExistUserParams, FindUserParams } from './user.types.js';
+import {
+  CheckExistUserParams,
+  FindUserParams,
+  ChangeBalanceParams,
+} from './user.types.js';
 
 export class UserRepository {
   constructor(
@@ -17,11 +21,16 @@ export class UserRepository {
   }
 
   async findById(userId: string): Promise<UserEntity | null> {
-    return this.userRepository.findOneBy({ userId });
+    return this.userRepository.findOneBy({
+      userId,
+    });
   }
 
   async findByLogin(login: string): Promise<UserEntity | null> {
-    return this.userRepository.findOneBy({ login });
+    return this.userRepository.findOneBy({
+      login,
+      isDeleted: false,
+    });
   }
 
   async findAndCount(params: FindUserParams): Promise<{
@@ -37,13 +46,29 @@ export class UserRepository {
   }
 
   async updateUser(params: DeepPartial<UserEntity>): Promise<void> {
-    await this.userRepository.update({ userId: params.userId }, params);
+    const { balance, ...updateUser } = params;
+
+    await this.userRepository.update(
+      {
+        userId: params.userId,
+      },
+      updateUser,
+    );
   }
 
-  async deleteUser(id: string): Promise<void> {
-    await this.userRepository.delete({
-      userId: id,
-    });
+  async changeBalance(params: ChangeBalanceParams): Promise<void> {
+    const { userId, balance } = params;
+
+    await this.userRepository.update({ userId }, { balance });
+  }
+
+  async deleteUser(userId: string): Promise<void> {
+    await this.userRepository.update(
+      { userId },
+      {
+        isDeleted: true,
+      },
+    );
   }
 
   async checkExistUser(
@@ -52,16 +77,20 @@ export class UserRepository {
   ): Promise<boolean> {
     const query = this.userRepository.createQueryBuilder(alias);
 
-    query.where('user.login = :login', {
+    query.where(`${alias}.login = :login`, {
       login: params.login,
     });
 
-    query.orWhere('user.phone = :phone', {
+    query.orWhere(`${alias}.phone = :phone`, {
       phone: params.phone,
     });
 
+    query.andWhere(`${alias}.isDeleted = :isDeleted`, {
+      isDeleted: false,
+    });
+
     const result = await query.getOne();
-    return result ? true : false;
+    return !!result;
   }
 
   qb(
@@ -69,6 +98,10 @@ export class UserRepository {
     alias = 'user',
   ): SelectQueryBuilder<UserEntity> {
     const query = this.userRepository.createQueryBuilder(alias);
+
+    query.andWhere(`${alias}.isDeleted = :isDeleted`, {
+      isDeleted: false,
+    });
 
     if (params.userIds?.length) {
       query.andWhere(`${alias}.userId IN (:...userIds)`, {
@@ -90,7 +123,6 @@ export class UserRepository {
       });
     }
 
-    // Paginate
     if (params.take) {
       query.take(params.take);
     }

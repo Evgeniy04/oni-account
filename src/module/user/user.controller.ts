@@ -14,14 +14,20 @@ import { CreateUserDto } from './dto/create-user.dto.js';
 import { UpdateUserDto } from './dto/update-user.dto.js';
 import GetUserFilterDto from './dto/get-users-filter.dto.js';
 import { SignInDto } from './dto/sign-in.dto.js';
+import { type EventTransactionSavedData } from './user.types.js';
 
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Post()
-  create(@Body() createUserDto: CreateUserDto): Promise<UserDto> {
+  create(@Body() createUserDto: CreateUserDto): Promise<void> {
     return this.userService.create(createUserDto);
+  }
+
+  @Post('/balance')
+  balance(@Body() body: EventTransactionSavedData): Promise<void> {
+    return this.userService.changeBalance(body);
   }
 
   @Get()
