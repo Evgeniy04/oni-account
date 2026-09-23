@@ -1,19 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform } from 'class-transformer';
-import {
-  IsNumber,
-  IsOptional,
-  IsString,
-} from 'class-validator';
+import { IsNumber, IsOptional, IsString } from 'class-validator';
 
 export default class GetUserFilterDto {
   @ApiProperty({
     description: '',
     type: [String],
     required: false,
-    example: [
-      '518f7913-36b8-4c0a-c0f1-c742e251acdf',
-    ],
+    example: ['518f7913-36b8-4c0a-c0f1-c742e251acdf'],
   })
   @IsOptional()
   @Transform(({ value }) => {
@@ -38,6 +32,19 @@ export default class GetUserFilterDto {
     message: 'Поля в массиве "phones" должны быть строками',
   })
   readonly phones?: string[];
+
+  @ApiProperty({
+    description: '',
+    type: [String],
+    required: false,
+    example: ['fndk11'],
+  })
+  @IsOptional()
+  @IsString({
+    each: true,
+    message: 'Поля в массиве "logins" должны быть строками',
+  })
+  readonly logins?: string[];
 
   @ApiProperty({
     description: '',

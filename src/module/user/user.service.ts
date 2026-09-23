@@ -4,6 +4,7 @@ import {
   Injectable,
   ConflictException,
   NotFoundException,
+  Inject,
 } from '@nestjs/common';
 
 import { CreateUserDto } from './dto/create-user.dto.js';
@@ -13,18 +14,16 @@ import { UserDto } from './dto/user.dto.js';
 import GetUserFilterDto from './dto/get-users-filter.dto.js';
 import { SignInDto } from './dto/sign-in.dto.js';
 
+import { REDIS_TOKEN } from '../../config/redis/redis.constant.js';
+import { Redis } from 'ioredis';
+
 @Injectable()
 export class UserService {
-  constructor(private readonly userRepository: UserRepository) {}
-
-  async verification({ login, password }: SignInDto): Promise<boolean> {
-    const user = await this.userRepository.findByLogin(login);
-    if (!user) {
-      throw new NotFoundException('User not found');
-    }
-
-    return argon.verify(user.passwordHash, password);
-  }
+  constructor(
+    @Inject(REDIS_TOKEN)
+    private readonly redis: Redis,
+    private readonly userRepository: UserRepository
+  ) {}
 
   async create(user: CreateUserDto): Promise<UserDto> {
     const userExist = await this.userRepository.checkExistUser({
@@ -51,6 +50,15 @@ export class UserService {
     return new UserDto(createdUser);
   }
 
+  async verification({ login, password }: SignInDto): Promise<boolean> {
+    const user = await this.userRepository.findByLogin(login);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    return argon.verify(user.passwordHash, password);
+  }
+
   async findAll(getUserFilterDto: GetUserFilterDto): Promise<{
     items: UserDto[];
     total: number;
@@ -69,7 +77,10 @@ export class UserService {
     return this.userRepository.updateUser({ userId: id, ...updateUserDto });
   }
 
-  remove(id: string) {
+  async remove(id: string) {
+    const user =
+      await this.userRepository.findById(id);
+    if (user) await this.redis.del(user.login);
     return this.userRepository.deleteUser(id);
   }
 }

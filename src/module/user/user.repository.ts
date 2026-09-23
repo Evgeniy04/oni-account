@@ -71,14 +71,22 @@ export class UserRepository {
     const query = this.userRepository.createQueryBuilder(alias);
 
     if (params.userIds?.length) {
-      query.andWhere(`${alias}.userId in (:...userIds)`, {
-        userIds: params.userIds,
+      query.andWhere(`${alias}.userId IN (:...userIds)`, {
+        userIds: Array.isArray(params.userIds)
+          ? params.userIds
+          : [params.userIds],
       });
     }
 
     if (params.phones?.length) {
-      query.andWhere(`${alias}.phone in (:...phones)`, {
-        phones: params.phones,
+      query.andWhere(`${alias}.phone IN (:...phones)`, {
+        phones: Array.isArray(params.phones) ? params.phones : [params.phones],
+      });
+    }
+
+    if (params.logins?.length) {
+      query.andWhere(`${alias}.login IN (:...logins)`, {
+        logins: Array.isArray(params.logins) ? params.logins : [params.logins],
       });
     }
 
